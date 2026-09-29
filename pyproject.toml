@@ -1,0 +1,27 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "video-formatter"
+version = "0.1.0"
+description = "High-performance video formatter, metadata stripper, and compression engine with Electron IPC support"
+readme = "README.md"
+authors = [
+    { name = "Hasitha Wijesinghe", email = "hasithalwi@github.com" }
+]
+license = { text = "MIT" }
+requires-python = ">=3.10"
+dependencies = [
+    "imageio-ffmpeg>=0.5.1",
+]
+
+[project.urls]
+Homepage = "https://github.com/HasithaLWi"
+
+[project.scripts]
+video-formatter = "src.my_app.main:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["src*"]

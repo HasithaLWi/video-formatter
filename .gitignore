@@ -1,0 +1,84 @@
+.env
+.venv
+build
+dist
+.pytest_cache
+.coverage
+.coverage.*
+.cache
+htmlcov
+.history
+
+*.py[cod]
+*$py.class
+*.so
+*.pyd
+*.pyc
+
+venv/
+ENV/
+env/
+
+__pycache__/
+*.pyc
+
+.env
+
+*.egg-info/
+.installed.cfg
+*.egg
+
+# Coverage
+.coverage
+.coverage.*
+htmlcov/
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*~
+
+# Compiled Python / pyinstaller
+*.o
+*.dll
+*.exe
+*.pkg
+*.dmg
+*.apk
+*.ipa
+
+# Notebook checkpoint files
+.ipynb_checkpoints/
+
+# Distribution / packaging
+dist/
+build/
+*.egg-info/
+
+# Testing
+.coverage
+.coverage.*
+htmlcov/
+
+# Environment variables
+.env
+
+# Testing
+.coverage
+.coverage.*
+htmlcov/
+
+# Testing
+.coverage
+.coverage.*
+htmlcov/
+
+# Testing
+.coverage
+.coverage.*
+htmlcov/
