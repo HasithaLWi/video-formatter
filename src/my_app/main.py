@@ -277,6 +277,11 @@ def main():
             print_summary_card(result)
 
     except KeyboardInterrupt:
+        if converter.active_process and converter.active_process.poll() is None:
+            try:
+                converter.active_process.kill()
+            except Exception:
+                pass
         if args.json:
             emit_json("cancelled", {"message": "Conversion cancelled by user"})
         else:

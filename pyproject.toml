@@ -3,9 +3,9 @@ requires = ["setuptools>=61.0"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "video-formatter"
+name = "pureclip"
 version = "0.1.0"
-description = "High-performance video formatter, metadata stripper, and compression engine with Electron IPC support"
+description = "PureClip - High-performance video formatter, privacy cleaner, and compression engine"
 readme = "README.md"
 authors = [
     { name = "Hasitha Wijesinghe", email = "hasithalwi@github.com" }
@@ -20,6 +20,7 @@ dependencies = [
 Homepage = "https://github.com/HasithaLWi"
 
 [project.scripts]
+pureclip = "src.my_app.main:main"
 video-formatter = "src.my_app.main:main"
 
 [tool.setuptools.packages.find]

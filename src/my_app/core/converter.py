@@ -62,6 +62,7 @@ class VideoConverter:
 
     def __init__(self, ffmpeg_bin: Optional[str] = None):
         self.ffmpeg_bin = ffmpeg_bin or get_ffmpeg_binary()
+        self.active_process: Optional[subprocess.Popen] = None
 
     def convert(
         self,
@@ -136,6 +137,7 @@ class VideoConverter:
                 in_path=in_path,
                 out_path=out_path,
                 out_format=out_format,
+                info=info,
                 preset_name=preset,
                 crf=crf,
                 scale=scale,
@@ -175,6 +177,7 @@ class VideoConverter:
         in_path: Path,
         out_path: Path,
         out_format: str,
+        info: MediaInfo,
         preset_name: str,
         crf: Optional[int],
         scale: Optional[str],
@@ -190,6 +193,14 @@ class VideoConverter:
 
         cmd = [self.ffmpeg_bin, "-y", "-nostats", "-hide_banner", "-i", str(in_path)]
 
+        # Safely map streams and discard data/timecode streams (e.g. tmcd from ProRes)
+        cmd.extend(["-map", "0:v:0"])
+        if info.has_audio:
+            cmd.extend(["-map", "0:a:0?"])
+        else:
+            cmd.extend(["-an"])
+        cmd.extend(["-dn"])
+
         # Video filters (scaling, framerate)
         vf_filters: list[str] = []
         if scale:
@@ -199,8 +210,20 @@ class VideoConverter:
 
         is_stream_copy = preset_cfg.video_codec == "copy" and not vf_filters and not target_mb
 
+        # Validate container & codec compatibility for stream copy
+        v_codec_lower = (info.video_codec or "").lower()
         if is_stream_copy:
-            cmd.extend(["-c", "copy"])
+            if out_format == "webm" and v_codec_lower not in ("vp9", "vp8", "av1"):
+                # WebM strictly forbids ProRes, H.264, etc. Must re-encode!
+                is_stream_copy = False
+            elif out_format in ("mp4", "m4v") and v_codec_lower not in ("h264", "hevc", "av1", "mp4v", "mpeg4"):
+                # MP4 cannot hold ProRes/DNxHD directly. Must re-encode!
+                is_stream_copy = False
+
+        if is_stream_copy:
+            cmd.extend(["-c:v", "copy"])
+            if info.has_audio:
+                cmd.extend(["-c:a", "copy"])
         else:
             # Codec selection based on format
             if out_format == "webm":
@@ -218,13 +241,13 @@ class VideoConverter:
 
             # Target file size bitrate calculation OR CRF
             if target_mb and target_mb > 0:
-                audio_kbps = 128
+                audio_kbps = 128 if info.has_audio else 0
                 target_kbits = target_mb * 8192
                 video_kbits = target_kbits - (audio_kbps * total_duration)
                 video_bitrate_kbps = max(int(video_kbits / total_duration), 100)
                 cmd.extend(["-b:v", f"{video_bitrate_kbps}k", "-maxrate", f"{int(video_bitrate_kbps * 1.5)}k", "-bufsize", f"{video_bitrate_kbps * 2}k"])
             else:
-                target_crf = crf if crf is not None else (preset_cfg.crf if preset_cfg.crf is not None else 23)
+                target_crf = crf if crf is not None else (preset_cfg.crf if preset_cfg.crf is not None else (30 if vcodec == "libvpx-vp9" else 23))
                 cmd.extend(["-crf", str(target_crf)])
                 if vcodec == "libvpx-vp9":
                     cmd.extend(["-b:v", "0"])
@@ -232,14 +255,15 @@ class VideoConverter:
             if preset_cfg.preset_speed and vcodec == "libx264":
                 cmd.extend(["-preset", preset_cfg.preset_speed])
 
-            # Standard pixel format for universal compatibility
-            if vcodec == "libx264":
+            # Universal 8-bit YUV420P pixel format (converts 10-bit/12-bit/YUVA ProRes to universally playable web video)
+            if vcodec in ("libx264", "libvpx-vp9"):
                 cmd.extend(["-pix_fmt", "yuv420p"])
 
-            # Audio codec & bitrate
-            cmd.extend(["-c:a", acodec])
-            a_bit = audio_bitrate or ("128k" if acodec == "libopus" else "192k")
-            cmd.extend(["-b:a", a_bit])
+            # Audio codec & bitrate (only if file has audio)
+            if info.has_audio:
+                cmd.extend(["-c:a", acodec])
+                a_bit = audio_bitrate or ("128k" if acodec == "libopus" else "192k")
+                cmd.extend(["-b:a", a_bit])
 
         # Metadata stripping
         if strip_metadata:
@@ -366,6 +390,7 @@ class VideoConverter:
             errors="replace",
             startupinfo=startupinfo,
         )
+        self.active_process = process
 
         stderr_lines: list[str] = []
 
@@ -382,60 +407,70 @@ class VideoConverter:
         current_speed = "1.0x"
         current_time_sec = 0.0
 
-        if process.stdout:
-            for line in iter(process.stdout.readline, ""):
-                line = line.strip()
-                if not line:
-                    continue
+        try:
+            if process.stdout:
+                for line in iter(process.stdout.readline, ""):
+                    line = line.strip()
+                    if not line:
+                        continue
 
-                if "=" in line:
-                    key, val = line.split("=", 1)
-                    key = key.strip()
-                    val = val.strip()
+                    if "=" in line:
+                        key, val = line.split("=", 1)
+                        key = key.strip()
+                        val = val.strip()
 
-                    if key == "frame":
-                        try:
-                            current_frame = int(val)
-                        except ValueError:
-                            pass
-                    elif key == "fps":
-                        try:
-                            current_fps = float(val)
-                        except ValueError:
-                            pass
-                    elif key == "speed":
-                        current_speed = val
-                    elif key == "out_time_us":
-                        try:
-                            current_time_sec = int(val) / 1_000_000.0
-                        except ValueError:
-                            pass
-                    elif key == "progress" and progress_callback:
-                        raw_pct = min(100.0, (current_time_sec / total_duration) * 100.0) if total_duration > 0 else 0.0
-                        adjusted_pct = round(base_percent + (raw_pct * scale_factor), 1)
-
-                        # Calculate ETA
-                        speed_mult = 1.0
-                        speed_match = re.search(r"(\d+(?:\.\d+)?)x", current_speed)
-                        if speed_match:
+                        if key == "frame":
                             try:
-                                speed_mult = float(speed_match.group(1))
+                                current_frame = int(val)
                             except ValueError:
-                                speed_mult = 1.0
+                                pass
+                        elif key == "fps":
+                            try:
+                                current_fps = float(val)
+                            except ValueError:
+                                pass
+                        elif key == "speed":
+                            current_speed = val
+                        elif key == "out_time_us":
+                            try:
+                                current_time_sec = int(val) / 1_000_000.0
+                            except ValueError:
+                                pass
+                        elif key == "progress" and progress_callback:
+                            raw_pct = min(100.0, (current_time_sec / total_duration) * 100.0) if total_duration > 0 else 0.0
+                            adjusted_pct = round(base_percent + (raw_pct * scale_factor), 1)
 
-                        remaining_sec = max(0.0, total_duration - current_time_sec)
-                        eta_sec = round(remaining_sec / max(speed_mult, 0.1), 1)
+                            # Calculate ETA
+                            speed_mult = 1.0
+                            speed_match = re.search(r"(\d+(?:\.\d+)?)x", current_speed)
+                            if speed_match:
+                                try:
+                                    speed_mult = float(speed_match.group(1))
+                                except ValueError:
+                                    speed_mult = 1.0
 
-                        info = ProgressInfo(
-                            percent=min(adjusted_pct, 100.0),
-                            current_seconds=round(current_time_sec, 2),
-                            total_seconds=round(total_duration, 2),
-                            speed=current_speed,
-                            fps=current_fps,
-                            eta_seconds=eta_sec,
-                            frame=current_frame,
-                        )
-                        progress_callback(info)
+                            remaining_sec = max(0.0, total_duration - current_time_sec)
+                            eta_sec = round(remaining_sec / max(speed_mult, 0.1), 1)
+
+                            info = ProgressInfo(
+                                percent=min(adjusted_pct, 100.0),
+                                current_seconds=round(current_time_sec, 2),
+                                total_seconds=round(total_duration, 2),
+                                speed=current_speed,
+                                fps=current_fps,
+                                eta_seconds=eta_sec,
+                                frame=current_frame,
+                            )
+                            progress_callback(info)
+        finally:
+            # Ensure FFmpeg is unconditionally killed if progress loop exits early (e.g. cancelled)
+            if process.poll() is None:
+                try:
+                    process.kill()
+                    process.wait(timeout=1.0)
+                except Exception:
+                    pass
+            self.active_process = None
 
         if process.stdout:
             process.stdout.close()

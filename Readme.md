@@ -1,258 +1,231 @@
-# 🎥 Video Formatter & Compressor
+# PureClip
 
 [![Python 3.10+](https://img.shields.io/badge/python-3.10+-blue.svg)](https://www.python.org/downloads/)
-[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![FFmpeg: Bundled](https://img.shields.io/badge/FFmpeg-Bundled%20(7.1)-green.svg)](https://ffmpeg.org)
-[![Electron Ready](https://img.shields.io/badge/Electron-IPC%20Ready-68217A.svg)](https://www.electronjs.org)
+[![Electron 35](https://img.shields.io/badge/Electron-35.1-68217A.svg)](https://www.electronjs.org)
+[![Author](https://img.shields.io/badge/Author-Hasitha%20Wijesinghe-0284c7.svg)](https://github.com/HasithaLWi)
 
-A high-performance media conversion, compression, and privacy-cleaning engine written in Python. Designed as both a feature-packed terminal CLI and a backend engine for future **Electron desktop applications** via real-time --json streaming.
+**PureClip** is a high-performance media transcoding, privacy-cleaning, and video compression suite featuring a sleek **glassmorphic desktop GUI** and a dual-mode **command-line engine**.
+
+It strips intrusive tracking metadata (camera serials, GPS coordinates, gyro telemetry) while reducing file sizes by up to **75%** with pristine visual fidelity.
 
 ---
 
-## ✨ Features
+## Features
 
-- **Multi-Format Support**:
-  - **Video**: MP4 (H.264), MKV, WebM (VP9/Opus), MOV, AVI.
+- **Multi-Format Transcoding**:
+  - **Video**: MP4 (H.264), WebM (VP9 / Opus), MKV, MOV, AVI.
   - **Audio Extraction**: MP3 (LAME), AAC, WAV, FLAC, OGG.
-  - **High-Fidelity GIF**: 2-pass palette generation (palettegen + paletteuse) for crisp, artifact-free animated GIFs.
-- **Instant Lossless Remuxing (stream_copy)**:
-  - Container changes (e.g. MOV to MP4 or MP4 to MKV) complete in under **1 second** with zero re-encoding and zero quality degradation.
-- **Privacy Cleaner (Camera & Device Metadata Stripping)**:
-  - Strips GPS coordinates, camera serial numbers, camera model data, and gyro telemetry by default (-map_metadata -1).
-  - Toggle --keep-metadata if you wish to retain original metadata.
-- **Web Streaming Optimization (FastStart)**:
-  - Automatically moves the moov atom to the front of MP4/MOV files (-movflags +faststart) so videos begin playback instantly without waiting for the full download.
-- **Zero-Config FFmpeg Engine**:
-  - Automatically detects and utilizes the bundled FFmpeg binary via imageio-ffmpeg, local binaries, or system PATH.
-- **Dual-Mode Architecture**:
-  - **Human CLI Mode**: Colorful ANSI summary cards and in-place progress bars with speed, fps, and ETA.
-  - **Machine IPC Mode (--json)**: Emits newline-delimited JSON events to stdout for direct consumption by Electron, Node.js, Tauri, or web frontends.
+  - **High-Fidelity 2-Pass GIF**: Generates optimized 256-color palettes (`palettegen` + `paletteuse`) for crisp, artifact-free animated GIFs.
+- **Instant Lossless Remuxing (`stream_copy`)**:
+  - Change containers (e.g. MOV to MP4, or MP4 to MKV) in **under 1 second** without re-encoding or losing quality.
+- **Privacy Shield (Metadata Stripping)**:
+  - Strips GPS location tags, camera serial numbers, camera model data, and gyro telemetry by default (`-map_metadata -1`).
+  - Toggle `--keep-metadata` if you wish to retain original metadata.
+- **FastStart Web Streaming Optimization**:
+  - Automatically moves the `moov` index atom to the front of MP4/MOV files (`-movflags +faststart`) so videos stream instantly in browsers and Discord without waiting for full downloads.
+- **Apple ProRes & High-Bitdepth Ingestion**:
+  - Ingests raw ProRes 4444 (12-bit `yuva444p12le`), automatically strips timecode tracks (`tmcd`), and maps pixel formats to universal web standards.
+- **GPU Hardware-Accelerated Video Player Preview**:
+  - Built-in preview player leverages DirectX 11 / DXVA2 GPU hardware decoding for fluid, stutter-free playback of 4K/60fps video files.
+- **Zero-Config Bundled FFmpeg**:
+  - Pre-packaged with FFmpeg 7.1 via `imageio-ffmpeg` -- no external installations or system PATH setup required.
+- **Process Guardian & Instant Tree Cancellation**:
+  - When cancelling a conversion, Windows Process Tree Kill (`taskkill /T /F`) forcefully terminates both Python and FFmpeg child processes immediately with zero background leaks and automatically cleans up partial files.
 
 ---
 
-## 🚀 Quickstart
+## Prerequisites
 
-### 1. Installation
+Before setting up the project, make sure you have installed:
+1. **Python 3.10+**: [Download Python](https://www.python.org/downloads/) *(check "Add python.exe to PATH" during installation)*
+2. **Node.js 18+ & npm**: [Download Node.js](https://nodejs.org/)
+3. **Git**: [Download Git](https://git-scm.com/)
 
-`ash
-# Clone or navigate to the repository
-cd  F:\IJSE\THIRED SEM\PYTHON\video-formatter
+> **Note**: You **do not** need to install FFmpeg separately. PureClip bundles FFmpeg 7.1 automatically through `imageio-ffmpeg`.
 
-# Create and activate virtual environment
+---
+
+## Quickstart (Installation & Running)
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/HasithaLWi/video-formatter.git
+cd video-formatter
+```
+
+### 2. Set Up Python Backend & Dependencies
+
+#### On Windows (PowerShell):
+```powershell
+# Create virtual environment
 python -m venv .venv
+
+# Activate virtual environment
 .\.venv\Scripts\activate
 
-# Install in editable mode
+# Install Python backend package in editable mode
 pip install -e .
-`
+```
+*(If PowerShell restricts scripts, run `Set-ExecutionPolicy -Scope Process -ExecutionPolicy Bypass` first, or use CMD below)*
 
-### 2. Basic Usage
+#### On Windows (Command Prompt - CMD):
+```cmd
+python -m venv .venv
+.\.venv\Scripts\activate.bat
+pip install -e .
+```
 
-`ash
-# Convert to MP4 with balanced compression (~60-70% size reduction)
-video-formatter video.mov -f mp4
-
-# Instant lossless remux from MOV to MP4 (no quality loss, <1s)
-video-formatter input.mov -f mp4 -p stream_copy
-
-# Modern WebM conversion (VP9 / Opus)
-video-formatter input.mp4 -f webm
-
-# High-fidelity animated GIF (scaled to 480px width, 15 fps)
-video-formatter clip.mp4 -f gif --scale 480:-1 --fps 15
-
-# Extract high-quality MP3 audio track
-video-formatter podcast.mp4 -f mp3 --audio-bitrate 192k
-
-# Compress to fit exactly within a 25 MB file size limit (Discord, Email)
-video-formatter recording.mp4 --target-mb 25
-
-# Inspect media metadata without converting
-video-formatter input.mp4 --info
-`
+#### On macOS / Linux:
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -e .
+```
 
 ---
 
-## 🎛️ Preset Profiles
+### 3. Install Desktop GUI Dependencies
+
+In the root directory of the project:
+
+```bash
+npm install
+```
+
+---
+
+### 4. Run the Application
+
+#### Option A: Launch the Desktop GUI (PureClip)
+Make sure the Python virtual environment (`.venv`) is active, then run:
+
+```bash
+npm start
+```
+*The glassmorphic desktop interface will appear. Simply drag and drop any video, select your preferred format, and start compression!*
+
+#### Option B: Run via CLI (Terminal)
+With the `.venv` activated, you can run the `pureclip` command directly:
+
+```bash
+# Basic conversion to MP4 with default balanced compression (~65-75% reduction)
+pureclip video.mov -f mp4
+
+# Instant lossless remux from MOV to MP4 (<1s, zero re-encoding)
+pureclip input.mov -f mp4 -p stream_copy
+
+# Transcode to modern WebM format (VP9 / Opus)
+pureclip input.mp4 -f webm
+
+# Convert video clip to crisp animated GIF (480px width at 15 fps)
+pureclip clip.mp4 -f gif --scale 480:-1 --fps 15
+
+# Extract high-quality MP3 audio track
+pureclip lecture.mp4 -f mp3 --audio-bitrate 192k
+
+# Compress to fit exactly within a target file size (e.g. 25 MB for Discord/Email)
+pureclip recording.mp4 --target-mb 25
+
+# Inspect media metadata without converting
+pureclip input.mp4 --info
+
+# Real-time machine-readable JSON streaming
+pureclip input.mp4 -f mp4 --json
+```
+
+---
+
+## Optimization Preset Guide
 
 | Preset | Video Codec | Audio Codec | CRF | Description |
 | :--- | :--- | :--- | :---: | :--- |
-| stream_copy | copy | copy | — | **Instant (<1s)** lossless remux. Zero quality loss. |
-| high_quality| libx264 | ac (192k) | 20 | Visually indistinguishable from source. Moderate compression. |
-| alanced *(Default)* | libx264 | ac (128k) | 24 | Optimal quality-to-size balance (~60-75% reduction). |
-| compact | libx264 | ac (96k) | 28 | Max compression for email and messaging attachments. |
-| webm | libvpx-vp9 | libopus (128k)| 30 | Next-generation open web standard. Superior compression efficiency. |
+| **`stream_copy`** | `copy` | `copy` | -- | **Instant (<1s)** lossless container swap. Zero quality loss. |
+| **`balanced`** *(Default)* | `libx264` | `aac` (128k) | 24 | Optimal size-to-quality balance (**~65-75% reduction**). |
+| **`high_quality`** | `libx264` | `aac` (192k) | 20 | Visually indistinguishable from source. Near-original fidelity. |
+| **`compact`** | `libx264` | `aac` (96k) | 28 | Maximum compression for messaging and email attachments. |
+| **`webm`** | `libvpx-vp9` | `libopus` (128k) | 30 | Next-generation open-web standard with superior compression efficiency. |
 
 ---
 
-## ⚙️ CLI Reference
+## CLI Reference
 
-`
-usage: video-formatter [-h] [-o OUTPUT] [-f FORMAT] [-p PRESET]
-                       [--crf CRF] [--scale SCALE] [--fps FPS]
-                       [--target-mb TARGET_MB] [--audio-bitrate AUDIO_BITRATE]
-                       [--keep-metadata] [--no-faststart] [--info] [--json]
-                       [-v] [input]
+```
+usage: pureclip [-h] [-o OUTPUT]
+                [-f {mp4,mkv,webm,mov,avi,mp3,aac,wav,flac,ogg,gif}]
+                [-p {stream_copy,high_quality,balanced,compact,webm}]
+                [--crf CRF] [--scale SCALE] [--fps FPS]
+                [--target-mb TARGET_MB] [--audio-bitrate AUDIO_BITRATE]
+                [--keep-metadata] [--no-faststart] [--info] [--json]
+                [-v] [input]
 
 Options:
-  -o, --output OUTPUT       Destination file or directory
-  -f, --format FORMAT       Target format (mp4, mkv, webm, mov, avi, mp3, aac, wav, gif)
-  -p, --preset PRESET       Encoding profile (stream_copy, high_quality, balanced, compact, webm)
-  --crf CRF                 Custom Constant Rate Factor (0-51)
+  -o, --output OUTPUT       Destination output file path or directory
+  -f, --format FORMAT       Target format (mp4, mkv, webm, mov, avi, mp3, aac, wav, flac, ogg, gif)
+  -p, --preset PRESET       Encoding profile (default: balanced)
+  --crf CRF                 Custom Constant Rate Factor (0-51, lower = higher quality)
   --scale SCALE             Target resolution scale (e.g. 1920:1080, 1280:720, 720:-1)
-  --fps FPS                 Target framerate (e.g. 60, 30, 15)
-  --target-mb TARGET_MB     Target file size in MB (auto-calculates optimal bitrate)
-  --audio-bitrate BITRATE   Audio bitrate (e.g. 128k, 192k, 320k)
+  --fps FPS                 Target framerate (e.g. 60, 30, 24, 15)
+  --target-mb TARGET_MB     Target output size in Megabytes (MB)
+  --audio-bitrate BITRATE   Target audio bitrate (e.g. 128k, 192k, 320k)
   --keep-metadata           Preserve camera GPS, serials, and device telemetry
   --no-faststart            Disable FastStart web streaming optimization
-  --info                    Inspect and display media metadata, then exit
-  --json                    Emit newline-delimited JSON stream for Electron IPC
-  -v, --version             Show version number
-`
+  --info                    Inspect and display file metadata then exit
+  --json                    Emit newline-delimited JSON events to stdout for IPC
+  -v, --version             Show program's version number and exit
+```
 
 ---
 
-## ⚡ Electron Desktop App Integration
+## Testing
 
-When calling ideo-formatter with --json, it streams events as individual JSON objects per line over stdout.
+PureClip includes an automated test suite verifying all transcoding pipelines, format conversions, probe parsing, and JSON IPC streaming:
 
-### Electron Main Process Example (main.js / main.ts):
-
-`javascript
-const { spawn } = require('child_process');
-const readline = require('readline');
-const path = require('path');
-
-function runVideoConversion(inputFilePath, options, win) {
-  // Path to the Python virtual environment executable
-  const pythonBin = path.join(__dirname, '..', '.venv', 'Scripts', 'video-formatter.exe');
-
-  const args = [
-    inputFilePath,
-    '-f', options.format || 'mp4',
-    '-p', options.preset || 'balanced',
-    '--json'
-  ];
-
-  if (options.scale) args.push('--scale', options.scale);
-  if (options.targetMb) args.push('--target-mb', options.targetMb.toString());
-  if (options.keepMetadata) args.push('--keep-metadata');
-
-  const child = spawn(pythonBin, args);
-  const rl = readline.createInterface({ input: child.stdout });
-
-  rl.on('line', (line) => {
-    try {
-      const event = JSON.parse(line.trim());
-      
-      switch (event.type) {
-        case 'probe':
-          // File inspected: { duration_seconds, resolution_str, format_name, ... }
-          win.webContents.send('video:probe', event.data);
-          break;
-
-        case 'progress':
-          // Live progress: { percent, speed, fps, eta_seconds, ... }
-          win.webContents.send('video:progress', event.data);
-          break;
-
-        case 'complete':
-          // Finished: { output_path, original_size_mb, output_size_mb, savings_pct, ... }
-          win.webContents.send('video:complete', event.data);
-          break;
-
-        case 'error':
-          win.webContents.send('video:error', event.data);
-          break;
-      }
-    } catch (e) {
-      console.error('Non-JSON stdout line:', line);
-    }
-  });
-
-  child.stderr.on('data', (data) => {
-    console.error(FFmpeg log: );
-  });
-
-  child.on('close', (code) => {
-    console.log(Process exited with code );
-  });
-
-  return child; // Retain reference to call child.kill() on user cancel
-}
-`
-
-### JSON Stream Event Schema:
-
-#### 1. probe (Emitted once after file analysis):
-`json
-{
-  type: probe,
-  data: {
-    file_path: F:\\Videos\\vacation.mov,
-    file_name: vacation.mov,
-    file_size_mb: 142.5,
-    duration_seconds: 34.2,
-    duration_str: 00:00:34,
-    resolution_str: 3840x2160,
-    aspect_ratio: 16:9,
-    video_codec: h264,
-    fps: 59.94,
-    has_audio: true,
-    audio_codec: aac
-  }
-}
-`
-
-#### 2. progress (Emitted continuously during encoding):
-`json
-{
-  type: progress,
-  data: {
-    percent: 45.6,
-    current_seconds: 15.6,
-    total_seconds: 34.2,
-    speed: 2.8x,
-    fps: 62.4,
-    eta_seconds: 6.6,
-    frame: 936
-  }
-}
-`
-
-#### 3. complete (Emitted upon successful encoding):
-`json
-{
-  type: complete,
-  data: {
-    input_path: F:\\Videos\\vacation.mov,
-    output_path: F:\\Videos\\output\\vacation_formatted.mp4,
-    target_format: mp4,
-    preset: balanced,
-    original_size_mb: 142.5,
-    output_size_mb: 38.1,
-    savings_bytes: 109471334,
-    savings_pct: 73.3,
-    media_duration_seconds: 34.2,
-    elapsed_time_seconds: 12.4,
-    metadata_stripped: true
-  }
-}
-`
+```bash
+python -m unittest discover -s test -p "test_*.py" -v
+```
 
 ---
 
-## 🧪 Testing
+## Project Architecture
 
-Run the automated test suite across all media conversion pipelines:
-
-`ash
-# Run unit and integration tests
-.\.venv\Scripts\python.exe -m unittest discover -s test -p test_*.py -v
-`
+```
+video-formatter/
+├── app/
+│   ├── index.html          # Desktop interface with glassmorphism styling
+│   ├── styles.css          # Dark-mode styling, animations, glowing accents
+│   └── renderer.js         # Frontend controller, drag & drop, HTML5 player
+├── electron/
+│   ├── main.js             # Electron main process (IPC handlers, process tree killer)
+│   └── preload.js          # Secure ContextBridge API
+├── src/my_app/
+│   ├── config.py           # Application constants & supported format matrix
+│   ├── main.py             # Dual-mode CLI entry point
+│   └── core/
+│       ├── ffmpeg_bin.py   # Bundled FFmpeg locator & validator
+│       ├── probe.py        # Media stream inspector (codecs, resolution, fps, duration)
+│       ├── presets.py      # Transcoding profiles (CRF, bitrate budgets)
+│       └── converter.py    # Non-blocking conversion engine & progress parser
+├── test/
+│   └── test_converter.py   # Unit & integration test suite
+├── package.json            # Electron app configuration & metadata
+├── pyproject.toml          # PEP 621 Python packaging
+├── LICENSE                 # MIT License
+└── README.md               # Documentation
+```
 
 ---
 
-## 📄 License
+## Author
 
-MIT License. Copyright (c) 2026 Hasitha Wijesinghe.
+**Hasitha Wijesinghe**
+- GitHub: [@HasithaLWi](https://github.com/HasithaLWi)
+- Email: `hasithalwi@github.com`
+
+---
+
+## License
+
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.

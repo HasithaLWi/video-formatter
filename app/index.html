@@ -1,0 +1,387 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PureClip - Fast Video Formatter & Compressor</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Top Navigation / Brand Header -->
+    <header class="app-header">
+      <div class="brand">
+        <div class="brand-icon">🎬</div>
+        <div class="brand-text">
+          <h1>Pure<span class="accent">Clip</span></h1>
+          <p class="subtitle">Fast Transcoding • Metadata Stripper • Privacy Engine</p>
+        </div>
+      </div>
+      <div class="header-badges">
+        <span class="badge badge-success">● FFmpeg 7.1 Bundled</span>
+        <span class="badge badge-primary">● Privacy Clean Active</span>
+        <button id="aboutBtn" class="badge badge-about" title="About & License"> About &amp; License</button>
+      </div>
+    </header>
+
+    <!-- Main Workspace -->
+    <main class="workspace">
+      <!-- 1. Drag & Drop Zone -->
+      <section id="dropzoneSection" class="dropzone-card">
+        <div class="dropzone-inner" id="dropzone">
+          <div class="upload-icon-wrapper">
+            <svg class="upload-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M12 16.5V3.75m0 0L7.5 8.25m4.5-4.5l4.5 4.5M3 15v4.5A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 19.5V15" />
+            </svg>
+          </div>
+          <h2>Drag & Drop Video or Audio File Here</h2>
+          <p class="drop-hint">Supports MP4, MOV, MKV, WebM, AVI, MP3, WAV, AAC, and GIF</p>
+          <button id="browseBtn" class="btn btn-primary btn-large">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+            Browse Files
+          </button>
+        </div>
+      </section>
+
+      <!-- 2. Loaded File & Conversion Settings -->
+      <section id="configSection" class="config-container hidden">
+        <!-- Media Inspection Card -->
+        <div class="card media-preview-card">
+          <div class="preview-player-col">
+            <div class="video-frame" id="videoFrame">
+              <video id="videoPreview" controls muted preload="metadata"></video>
+              <div id="audioPlaceholder" class="audio-placeholder hidden">
+                <div class="audio-icon">🎵</div>
+                <span>Audio Stream</span>
+              </div>
+            </div>
+          </div>
+          <div class="preview-meta-col">
+            <div class="meta-header">
+              <div class="file-title-wrap">
+                <h3 id="metaFileName">video.mp4</h3>
+                <span id="metaFileSize" class="meta-size-badge">0 MB</span>
+              </div>
+              <button id="changeFileBtn" class="btn btn-ghost btn-sm">Change File</button>
+            </div>
+            
+            <div class="meta-grid">
+              <div class="meta-item">
+                <span class="meta-label">Resolution</span>
+                <span id="metaRes" class="meta-val">1920x1080</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Aspect Ratio</span>
+                <span id="metaAspect" class="meta-val">16:9</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Duration</span>
+                <span id="metaDuration" class="meta-val">00:00:00</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Video Codec</span>
+                <span id="metaVCodec" class="meta-val">H.264</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Framerate</span>
+                <span id="metaFps" class="meta-val">30 fps</span>
+              </div>
+              <div class="meta-item">
+                <span class="meta-label">Audio Codec</span>
+                <span id="metaACodec" class="meta-val">AAC</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Conversion Settings Card -->
+        <div class="card settings-card">
+          <!-- Target Format Selection -->
+          <div class="setting-group">
+            <label class="setting-title">Target Format</label>
+            <div class="format-pills" id="formatPills">
+              <button type="button" class="pill active" data-format="mp4">MP4 (H.264)</button>
+              <button type="button" class="pill" data-format="webm">WebM (VP9)</button>
+              <button type="button" class="pill" data-format="mkv">MKV</button>
+              <button type="button" class="pill" data-format="mov">MOV</button>
+              <button type="button" class="pill" data-format="mp3">MP3 (Audio)</button>
+              <button type="button" class="pill" data-format="gif">GIF (2-Pass)</button>
+            </div>
+          </div>
+
+          <!-- Preset Profile Selection -->
+          <div class="setting-group" id="presetGroup">
+            <label class="setting-title">Optimization Profile</label>
+            <div class="preset-cards">
+              <label class="preset-card">
+                <input type="radio" name="preset" value="stream_copy">
+                <div class="preset-content">
+                  <div class="preset-header">
+                    <strong>Instant Remux</strong>
+                  </div>
+                  <p>Lossless container swap in &lt;1s (0% quality loss)</p>
+                </div>
+              </label>
+
+              <label class="preset-card active">
+                <input type="radio" name="preset" value="balanced" checked>
+                <div class="preset-content">
+                  <div class="preset-header">
+                    <strong>Balanced (Default)</strong>
+                  </div>
+                  <p>Optimal quality &amp; ~65-75% file size reduction</p>
+                </div>
+              </label>
+
+              <label class="preset-card">
+                <input type="radio" name="preset" value="high_quality">
+                <div class="preset-content">
+                  <div class="preset-header">
+                    <strong>High Quality</strong>
+                  </div>
+                  <p>CRF 20, pristine archival visual fidelity</p>
+                </div>
+              </label>
+
+              <label class="preset-card">
+                <input type="radio" name="preset" value="compact">
+                <div class="preset-content">
+                  <div class="preset-header">
+                    <strong>Compact</strong>
+                  </div>
+                  <p>Maximum compression for Discord &amp; email limits</p>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Privacy & Web Streaming Toggles -->
+          <div class="toggles-row">
+            <label class="toggle-card">
+              <input type="checkbox" id="stripMetadata" checked>
+              <span class="toggle-slider"></span>
+              <div class="toggle-text">
+                <strong> Clean Camera &amp; Device Metadata</strong>
+                <span>Strip GPS coordinates, camera serial numbers, and gyro telemetry</span>
+              </div>
+            </label>
+
+            <label class="toggle-card" id="faststartCard">
+              <input type="checkbox" id="faststart" checked>
+              <span class="toggle-slider"></span>
+              <div class="toggle-text">
+                <strong>FastStart Web Streaming</strong>
+                <span>Move moov atom to front for instant video playback online</span>
+              </div>
+            </label>
+          </div>
+
+          <!-- Advanced Collapsible Options -->
+          <details class="advanced-details">
+            <summary class="advanced-summary">
+              <span>Advanced Resolution, Bitrate &amp; Destination Options</span>
+            </summary>
+            <div class="advanced-content">
+              <div class="form-row">
+                <div class="form-field">
+                  <label for="scaleSelect">Resolution Scale</label>
+                  <select id="scaleSelect">
+                    <option value="">Original Resolution</option>
+                    <option value="1920:1080">1080p Full HD (1920x1080)</option>
+                    <option value="1280:720">720p HD (1280x720)</option>
+                    <option value="854:480">480p SD (854x480)</option>
+                    <option value="480:-1">480px Width (Auto Height)</option>
+                    <option value="custom">Custom Scale...</option>
+                  </select>
+                  <input type="text" id="customScaleInput" class="hidden" placeholder="e.g. 1280:720 or 720:-1">
+                </div>
+
+                <div class="form-field">
+                  <label for="targetMbInput">Target File Size Limit (MB)</label>
+                  <input type="number" id="targetMbInput" placeholder="Auto (Calculated by Preset)" min="1" step="1">
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-field">
+                  <label for="fpsSelect">Framerate (FPS)</label>
+                  <select id="fpsSelect">
+                    <option value="">Original FPS</option>
+                    <option value="60">60 fps</option>
+                    <option value="30">30 fps</option>
+                    <option value="24">24 fps (Cinematic)</option>
+                    <option value="15">15 fps (GIF optimal)</option>
+                  </select>
+                </div>
+
+                <div class="form-field">
+                  <label>Save Destination</label>
+                  <div class="file-dest-picker">
+                    <input type="text" id="outputDirInput" placeholder="Default (output/ folder)" readonly>
+                    <button type="button" id="selectDirBtn" class="btn btn-secondary btn-sm">Browse...</button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </details>
+
+          <!-- Action Bar -->
+          <div class="action-bar">
+            <button id="convertBtn" class="btn btn-primary btn-cta">
+              Start Formatting &amp; Compression
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 3. Progress Overlay Modal -->
+      <section id="progressSection" class="progress-modal hidden">
+        <div class="progress-card">
+          <div class="progress-card-header">
+            <div class="pulsing-dot"></div>
+            <h3>Converting &amp; Compressing...</h3>
+          </div>
+          
+          <div class="progress-bar-track">
+            <div id="progressBarFill" class="progress-bar-fill" style="width: 0%;"></div>
+          </div>
+          
+          <div class="progress-stats-row">
+            <div class="stat-box">
+              <span class="stat-label">Progress</span>
+              <strong id="statPct" class="stat-val">0.0%</strong>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">Speed</span>
+              <strong id="statSpeed" class="stat-val">1.0x</strong>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">Encoding Speed</span>
+              <strong id="statFps" class="stat-val">-- fps</strong>
+            </div>
+            <div class="stat-box">
+              <span class="stat-label">Remaining</span>
+              <strong id="statEta" class="stat-val">Calculating...</strong>
+            </div>
+          </div>
+
+          <div class="modal-actions">
+            <button id="cancelBtn" class="btn btn-danger btn-sm">Cancel Conversion</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 4. Completion Success Screen -->
+      <section id="completeSection" class="complete-card hidden">
+        <h2>Conversion Finished Successfully!</h2>
+        <p class="success-subtitle">Your formatted media is clean, optimized, and ready.</p>
+
+        <div class="savings-showcase">
+          <div class="savings-box original-box">
+            <span class="savings-tag">Original Size</span>
+            <strong id="compOrigSize" class="savings-val">0.00 MB</strong>
+          </div>
+          <div class="savings-arrow">➔</div>
+          <div class="savings-box new-box">
+            <span class="savings-tag">Optimized Size</span>
+            <strong id="compNewSize" class="savings-val">0.00 MB</strong>
+          </div>
+        </div>
+
+        <div id="savingsBadge" class="savings-pill">
+          Space Saved: <strong>0.00 MB (-0%)</strong>
+        </div>
+
+        <div class="details-chips">
+          <span class="chip" id="chipFormat">Format: MP4</span>
+          <span class="chip" id="chipElapsed">Time: 0.0s</span>
+          <span class="chip chip-privacy" id="chipPrivacy">🛡️ Privacy: Cleaned</span>
+        </div>
+
+        <div class="complete-actions">
+          <button id="openExplorerBtn" class="btn btn-primary btn-large">
+            <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"/></svg>
+            Show in File Explorer
+          </button>
+          <button id="convertAnotherBtn" class="btn btn-secondary btn-large">
+            Convert Another File
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <!-- App Footer with Credentials & License -->
+    <footer class="app-footer">
+      <div class="footer-left">
+        <span>Developed by <strong class="author-name">Hasitha Wijesinghe</strong></span>
+        <span class="footer-dot">•</span>
+        <span class="footer-license-tag">MIT License</span>
+      </div>
+      <div class="footer-right">
+        <a href="https://github.com/HasithaLWi" id="footerGithubLink" class="footer-link">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+          github.com/HasithaLWi
+        </a>
+      </div>
+    </footer>
+  </div>
+
+  <!-- About & License Modal -->
+  <div id="aboutModal" class="about-modal hidden">
+    <div class="about-card">
+      <div class="about-header">
+        <div class="about-brand">
+          <span class="about-icon">🎬</span>
+          <div>
+            <h3>PureClip</h3>
+            <span class="about-version">v0.1.0 • Desktop Edition</span>
+          </div>
+        </div>
+        <button id="closeAboutBtn" class="close-btn">&times;</button>
+      </div>
+
+      <div class="about-body">
+        <div class="author-profile-box">
+          <div class="author-avatar">HW</div>
+          <div class="author-info">
+            <strong>Hasitha Wijesinghe</strong>
+            <span>Lead Software Engineer &amp; Author</span>
+            <a href="https://github.com/HasithaLWi" id="aboutGithubLink" class="about-github-link">
+              🔗 https://github.com/HasithaLWi
+            </a>
+          </div>
+        </div>
+
+        <div class="license-box">
+          <div class="license-header">
+            <strong>MIT License</strong>
+            <span>Copyright &copy; 2026 Hasitha Wijesinghe</span>
+          </div>
+          <p class="license-text">
+            Permission is hereby granted, free of charge, to any person obtaining a copy
+            of this software and associated documentation files, to deal in the Software
+            without restriction, including the rights to use, copy, modify, merge, publish,
+            distribute, and sublicense.
+          </p>
+        </div>
+
+        <div class="about-tech-stack">
+          <span class="tech-tag">• Python 3.14</span>
+          <span class="tech-tag">• Bundled FFmpeg 7.1</span>
+          <span class="tech-tag">• Electron 35</span>
+          <span class="tech-tag">• Privacy Clean Engine</span>
+        </div>
+      </div>
+
+      <div class="about-footer">
+        <button id="closeAboutModalBtn" class="btn btn-primary btn-sm">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="renderer.js"></script>
+</body>
+</html>

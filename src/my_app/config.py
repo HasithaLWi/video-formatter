@@ -6,7 +6,7 @@ Licensed under the MIT License.
 from pathlib import Path
 
 # Application Metadata
-APP_NAME = "Video Formatter & Compressor"
+APP_NAME = "PureClip"
 APP_VERSION = "0.1.0"
 AUTHOR = "Hasitha Wijesinghe"
 

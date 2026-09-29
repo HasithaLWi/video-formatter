@@ -1,0 +1,28 @@
+{
+  "name": "pureclip",
+  "version": "0.1.0",
+  "description": "PureClip - High-Performance Video Formatter, Privacy Cleaner and Compressor Desktop App",
+  "main": "electron/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron ."
+  },
+  "keywords": [
+    "video",
+    "converter",
+    "compressor",
+    "electron",
+    "ffmpeg",
+    "privacy"
+  ],
+  "author": {
+    "name": "Hasitha Wijesinghe",
+    "email": "hasithalwi@github.com",
+    "url": "https://github.com/HasithaLWi"
+  },
+  "homepage": "https://github.com/HasithaLWi",
+  "license": "MIT",
+  "devDependencies": {
+    "electron": "^35.1.2"
+  }
+}

@@ -1,84 +1,95 @@
-.env
-.venv
-build
-dist
-.pytest_cache
-.coverage
-.coverage.*
-.cache
-htmlcov
-.history
+# ==============================================================================
+# PureClip - Git Ignore Configuration
+# ==============================================================================
 
+# Output Directories & Media Files
+output/
+test/output/
+*.mp4
+*.mkv
+*.webm
+*.mov
+*.avi
+*.gif
+*.mp3
+*.wav
+*.aac
+*.flac
+*.ogg
+
+# Keep test directory placeholder if needed
+!test/sample*.mp4
+
+# Python & Virtual Environments
+.venv/
+venv/
+env/
+ENV/
+__pycache__/
 *.py[cod]
 *$py.class
-*.so
 *.pyd
-*.pyc
-
-venv/
-ENV/
-env/
-
-__pycache__/
-*.pyc
-
-.env
-
-*.egg-info/
-.installed.cfg
+*.so
 *.egg
+*.egg-info/
+dist/
+build/
+.installed.cfg
+develop-eggs/
+downloads/
+eggs/
+.eggs/
+parts/
+var/
+sdist/
+wheels/
 
-# Coverage
+# Node.js & Electron
+node_modules/
+package-lock.json
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.pnpm-store/
+out/
+app-builds/
+
+# Testing & Coverage
 .coverage
 .coverage.*
 htmlcov/
+.pytest_cache/
+.tox/
+.nox/
+nosetests.xml
+coverage.xml
 
-# OS-generated files
-.DS_Store
-Thumbs.db
-
-# IDE files
+# IDEs & Code Editors
 .vscode/
 .idea/
 *.swp
+*.swo
 *~
+.project
+.pydevproject
+.settings/
 
-# Compiled Python / pyinstaller
-*.o
-*.dll
-*.exe
-*.pkg
-*.dmg
-*.apk
-*.ipa
+# Operating System Files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
 
-# Notebook checkpoint files
-.ipynb_checkpoints/
-
-# Distribution / packaging
-dist/
-build/
-*.egg-info/
-
-# Testing
-.coverage
-.coverage.*
-htmlcov/
-
-# Environment variables
+# Environment & Local Secrets
 .env
+.env.local
+.env.*.local
 
-# Testing
-.coverage
-.coverage.*
-htmlcov/
-
-# Testing
-.coverage
-.coverage.*
-htmlcov/
-
-# Testing
-.coverage
-.coverage.*
-htmlcov/
+# Temporary Scratch Files
+scratch/
+.system_generated/

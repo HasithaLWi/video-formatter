@@ -55,6 +55,8 @@ class MediaInfo:
             ratio = self.width / self.height
             if abs(ratio - 16 / 9) < 0.05:
                 return "16:9"
+            if abs(ratio - 16 / 10) < 0.05 or abs(ratio - 8 / 5) < 0.05:
+                return "16:10 (8:5)"
             if abs(ratio - 9 / 16) < 0.05:
                 return "9:16 (Vertical/Mobile)"
             if abs(ratio - 4 / 3) < 0.05:
@@ -167,7 +169,15 @@ def _parse_overall_bitrate(stderr: str) -> int:
 
 
 def _parse_resolution(stderr: str) -> tuple[Optional[int], Optional[int]]:
-    match = re.search(r",\s*(\d{2,5})x(\d{2,5})", stderr)
+    # Search specifically in the Video stream line first
+    for line in stderr.splitlines():
+        if "Video:" in line:
+            match = re.search(r"\b(\d{2,5})x(\d{2,5})\b", line)
+            if match:
+                return int(match.group(1)), int(match.group(2))
+
+    # General fallback search across full stderr
+    match = re.search(r"\b(\d{2,5})x(\d{2,5})\b", stderr)
     if match:
         return int(match.group(1)), int(match.group(2))
     return None, None
