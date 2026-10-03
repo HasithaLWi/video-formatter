@@ -11,22 +11,60 @@ let isCancelled = false;
 
 function getBackendExecutable() {
   const isWin = process.platform === 'win32';
+  const binName = isWin ? 'pureclip-engine.exe' : 'pureclip-engine';
+
+  // 1. Packaged production app (inside resources/bin/pureclip-engine/ or resources/bin/)
+  if (app.isPackaged) {
+    const candidates = [
+      path.join(process.resourcesPath, 'bin', 'pureclip-engine', binName),
+      path.join(process.resourcesPath, 'bin', binName),
+      path.join(process.resourcesPath, 'pureclip-engine', binName),
+    ];
+    for (const candidate of candidates) {
+      if (fs.existsSync(candidate)) {
+        return { cmd: candidate, argsPrefix: [] };
+      }
+    }
+  }
+
+  // 2. Pre-built stationary engine in project bin/ folder
+  const localCandidates = [
+    path.join(__dirname, '..', 'bin', 'pureclip-engine', binName),
+    path.join(__dirname, '..', 'bin', binName),
+  ];
+  for (const candidate of localCandidates) {
+    if (fs.existsSync(candidate)) {
+      return { cmd: candidate, argsPrefix: [] };
+    }
+  }
+
+  // 3. Compiled entrypoint script in .venv
   const venvDir = path.join(__dirname, '..', '.venv', isWin ? 'Scripts' : 'bin');
-  
-  // 1. Check compiled entrypoint script in .venv
   const exePath = path.join(venvDir, isWin ? 'video-formatter.exe' : 'video-formatter');
   if (fs.existsSync(exePath)) {
     return { cmd: exePath, argsPrefix: [] };
   }
-  
-  // 2. Check python executable in .venv
+
+  // 4. Python executable in .venv
   const pyPath = path.join(venvDir, isWin ? 'python.exe' : 'python');
   if (fs.existsSync(pyPath)) {
     return { cmd: pyPath, argsPrefix: ['-m', 'src.my_app.main'] };
   }
-  
-  // 3. Fallback to system PATH
+
+  // 5. Fallback to system PATH
   return { cmd: 'video-formatter', argsPrefix: [] };
+}
+
+function getSpawnOptions(cmd) {
+  // CRITICAL: When packaged, cwd MUST be a real directory on disk (e.g. engine folder).
+  // Never point cwd to path.join(__dirname, '..') because that points to app.asar (a file archive),
+  // which causes Windows CreateProcess to immediately fail with ENOENT!
+  const execCwd = app.isPackaged ? path.dirname(cmd) : path.join(__dirname, '..');
+  return {
+    cwd: execCwd,
+    windowsHide: true,
+    env: { ...process.env, PYTHONIOENCODING: 'utf-8' },
+  };
 }
 
 function killProcessTree(pid) {
@@ -34,7 +72,7 @@ function killProcessTree(pid) {
   if (process.platform === 'win32') {
     try {
       // Force kill the entire process tree (/T = tree kill, /F = force)
-      // This kills python AND all child ffmpeg-win-x86_64-v7.1.exe processes immediately!
+      // This kills python AND all child ffmpeg processes immediately!
       spawnSync('taskkill', ['/pid', pid.toString(), '/T', '/F']);
     } catch (err) {
       console.error('Error executing taskkill:', err);
@@ -51,6 +89,8 @@ function killProcessTree(pid) {
 function createWindow() {
   Menu.setApplicationMenu(null); // Clean window without old-school menubar
 
+  const iconPath = path.join(__dirname, '..', 'assets', process.platform === 'win32' ? 'icon.ico' : 'icon.png');
+
   mainWindow = new BrowserWindow({
     width: 1080,
     height: 800,
@@ -58,6 +98,7 @@ function createWindow() {
     minHeight: 660,
     backgroundColor: '#070a13',
     title: 'PureClip - Video Formatter & Compressor',
+    icon: fs.existsSync(iconPath) ? iconPath : undefined,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       contextIsolation: true,
@@ -115,10 +156,7 @@ ipcMain.handle('video:probe', async (_event, filePath) => {
     const { cmd, argsPrefix } = getBackendExecutable();
     const args = [...argsPrefix, filePath, '--info', '--json'];
 
-    const child = spawn(cmd, args, {
-      cwd: path.join(__dirname, '..'),
-      env: { ...process.env, PYTHONIOENCODING: 'utf-8' },
-    });
+    const child = spawn(cmd, args, getSpawnOptions(cmd));
 
     let probeResult = null;
     let errorOutput = '';
@@ -187,10 +225,7 @@ ipcMain.handle('video:convert', async (_event, options) => {
   }
 
   return new Promise((resolve, reject) => {
-    activeProcess = spawn(cmd, args, {
-      cwd: path.join(__dirname, '..'),
-      env: { ...process.env, PYTHONIOENCODING: 'utf-8' },
-    });
+    activeProcess = spawn(cmd, args, getSpawnOptions(cmd));
 
     const child = activeProcess;
     let finalResult = null;

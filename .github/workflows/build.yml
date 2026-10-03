@@ -1,0 +1,67 @@
+name: Build Multi-Platform PureClip Desktop App
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - 'v*'
+
+jobs:
+  build:
+    name: Build (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: windows-latest
+            target_flag: --win
+            asset_ext: exe,zip
+          - os: macos-latest
+            target_flag: --mac
+            asset_ext: dmg,zip
+          - os: ubuntu-latest
+            target_flag: --linux
+            asset_ext: AppImage,deb
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: Install Python dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller pillow imageio-ffmpeg
+          pip install -e .
+
+      - name: Set up Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Node dependencies
+        run: npm install
+
+      - name: Create desktop multi-resolution icons
+        run: python scripts/create_icons.py
+
+      - name: Compile standalone engine (--onedir)
+        run: python scripts/build_engine.py
+
+      - name: Package with electron-builder
+        run: npx electron-builder ${{ matrix.target_flag }}
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: PureClip-${{ matrix.os }}
+          path: release/*

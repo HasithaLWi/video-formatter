@@ -5,7 +5,15 @@
   "main": "electron/main.js",
   "scripts": {
     "start": "electron .",
-    "dev": "electron ."
+    "dev": "electron .",
+    "icons": ".venv\\Scripts\\python.exe scripts/create_icons.py",
+    "build:engine": ".venv\\Scripts\\python.exe scripts/build_engine.py",
+    "build:win": "npm run build:engine && electron-builder --win",
+    "build:win:portable": "npm run build:engine && electron-builder --win portable",
+    "build:mac": "npm run build:engine && electron-builder --mac",
+    "build:linux": "npm run build:engine && electron-builder --linux",
+    "build:all": "npm run build:engine && electron-builder -wml",
+    "dist": "npm run build:win"
   },
   "keywords": [
     "video",
@@ -23,6 +31,86 @@
   "homepage": "https://github.com/HasithaLWi",
   "license": "MIT",
   "devDependencies": {
-    "electron": "^35.1.2"
+    "electron": "^35.1.2",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "com.hasithalwi.pureclip",
+    "productName": "PureClip",
+    "copyright": "Copyright © 2026 Hasitha Wijesinghe",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron/**/*",
+      "app/**/*",
+      "assets/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "bin/pureclip-engine",
+        "to": "bin/pureclip-engine",
+        "filter": [
+          "**/*"
+        ]
+      },
+      {
+        "from": "HOW_TO_USE.txt",
+        "to": "HOW_TO_USE.txt"
+      },
+      {
+        "from": "LICENSE",
+        "to": "LICENSE"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
+      "icon": "assets/icon.ico",
+      "artifactName": "${productName}-Setup-${version}.${ext}",
+      "legalTrademarks": "PureClip by Hasitha Wijesinghe"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "PureClip",
+      "installerIcon": "assets/icon.ico",
+      "uninstallerIcon": "assets/icon.ico",
+      "installerHeaderIcon": "assets/icon.ico"
+    },
+    "portable": {
+      "artifactName": "${productName}-Portable-${version}.${ext}"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "assets/icon.png",
+      "category": "public.app-category.video"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "assets/icon.png",
+      "category": "Video"
+    }
   }
 }

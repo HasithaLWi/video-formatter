@@ -1,0 +1,55 @@
+========================================================================
+  PureClip - High-Performance Video Formatter, Compressor & Privacy Engine
+========================================================================
+
+Version: 0.1.0
+Author: Hasitha Wijesinghe (https://github.com/HasithaLWi)
+License: MIT License
+Website: https://github.com/HasithaLWi/video-formatter
+
+========================================================================
+1. QUICK START
+========================================================================
+1. Double-click "PureClip.exe" (or launch PureClip from your Start Menu).
+2. Drag and drop any video or audio file into the application window,
+   or click "Browse File".
+3. Choose your desired output format (MP4, MKV, WebM, MOV, MP3, AAC, WAV, GIF).
+4. Select an optimization preset:
+   • Stream Copy  : Lossless instant container swap (< 1 second)
+   • Balanced     : Optimal quality & 60-75% file size reduction (Recommended)
+   • High Quality : Pristine visual fidelity
+   • Compact      : Ultra-small size for Discord, messaging & email
+5. Click "Start Conversion".
+6. When complete, click "Reveal in File Explorer" to view your converted file.
+
+========================================================================
+2. FREQUENTLY ASKED QUESTIONS (FAQ)
+========================================================================
+
+Q1: Windows SmartScreen shows "Windows protected your PC" on first launch.
+------------------------------------------------------------------------
+A: This happens on Windows for any newly compiled, open-source application
+   downloaded from the internet that has not yet built cloud download reputation.
+   PureClip is 100% open-source, contains NO malware or telemetry, and bundles
+   an official FFmpeg binary.
+   
+   To launch:
+   1. Click "More info".
+   2. Click "Run anyway".
+   Windows will remember your decision and will not ask again.
+
+Q2: Do I need to install Python or FFmpeg separately?
+------------------------------------------------------------------------
+A: No! PureClip is completely self-contained. The official FFmpeg 7.1 binary
+   and high-speed conversion engine are pre-bundled in the app package.
+
+Q3: Does PureClip upload my files to the cloud?
+------------------------------------------------------------------------
+A: Never. All conversion and metadata scrubbing happens 100% locally on your
+   own device. Your private videos never leave your computer.
+
+Q4: What metadata does the "Privacy Clean" feature remove?
+------------------------------------------------------------------------
+A: By default, PureClip strips hidden camera device serial numbers, GPS
+   location tags, creation timestamps, and recording software telemetry
+   from the output media.

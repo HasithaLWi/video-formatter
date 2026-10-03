@@ -32,8 +32,6 @@ __pycache__/
 *.so
 *.egg
 *.egg-info/
-dist/
-build/
 .installed.cfg
 develop-eggs/
 downloads/
@@ -44,6 +42,23 @@ var/
 sdist/
 wheels/
 
+# Build & Standalone Binaries (PyInstaller & electron-builder)
+bin/
+build/
+dist/
+release/
+out/
+app-builds/
+*.exe
+*.dmg
+*.AppImage
+*.deb
+*.spec
+*.blockmap
+builder-debug.yml
+builder-effective-config.yaml
+latest*.yml
+
 # Node.js & Electron
 node_modules/
 package-lock.json
@@ -52,8 +67,6 @@ yarn-debug.log*
 yarn-error.log*
 pnpm-debug.log*
 .pnpm-store/
-out/
-app-builds/
 
 # Testing & Coverage
 .coverage
@@ -93,3 +106,6 @@ desktop.ini
 # Temporary Scratch Files
 scratch/
 .system_generated/
+
+
+release/
