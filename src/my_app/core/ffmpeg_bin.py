@@ -35,10 +35,14 @@ def get_ffmpeg_binary() -> str:
     candidates: list[str] = []
 
     # 1. Check frozen PyInstaller environment
-    if getattr(sys, "frozen", False) and hasattr(sys, "_MEIPASS"):
-        meipass_ffmpeg = Path(sys._MEIPASS) / ("ffmpeg.exe" if sys.platform == "win32" else "ffmpeg")
-        if meipass_ffmpeg.exists():
-            candidates.append(str(meipass_ffmpeg))
+    if getattr(sys, "frozen", False):
+        exe_dir_ffmpeg = Path(sys.executable).parent / ("ffmpeg.exe" if sys.platform == "win32" else "ffmpeg")
+        if exe_dir_ffmpeg.exists():
+            candidates.append(str(exe_dir_ffmpeg))
+        if hasattr(sys, "_MEIPASS"):
+            meipass_ffmpeg = Path(sys._MEIPASS) / ("ffmpeg.exe" if sys.platform == "win32" else "ffmpeg")
+            if meipass_ffmpeg.exists():
+                candidates.append(str(meipass_ffmpeg))
 
     # 2. Check imageio-ffmpeg
     try:
